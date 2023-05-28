@@ -1,26 +1,26 @@
 -- Databricks notebook source
 -- MAGIC %md
 -- MAGIC # Delta Live Tables with SQL
--- MAGIC 
+-- MAGIC
 -- MAGIC This notebook uses SQL to declare Delta Live Tables. 
--- MAGIC 
+-- MAGIC
 -- MAGIC [Complete documentation of DLT syntax is available here](https://docs.databricks.com/data-engineering/delta-live-tables/delta-live-tables-language-ref.html#sql).
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ## Basic DLT SQL Syntax
--- MAGIC 
+-- MAGIC
 -- MAGIC At its simplest, you can think of DLT SQL as a slight modification to tradtional CTAS statements.
--- MAGIC 
+-- MAGIC
 -- MAGIC DLT tables and views will always be preceded by the `LIVE` keyword.
--- MAGIC 
+-- MAGIC
 -- MAGIC If you wish to process data incrementally (using the same processing model as Structured Streaming), also use the `INCREMENTAL` keyword.
 
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Step 1: Create Bronze table for Sales
 
 -- COMMAND ----------
@@ -28,42 +28,42 @@
 CREATE STREAMING LIVE TABLE bronze_date
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Date table ingested from cloud object storage landing zone"
-AS SELECT *, input_file_name() as input_file_name FROM cloud_files("/FileStore/lakehouse/demo/data/date", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/date", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_customer
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Customer table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, input_file_name() as input_file_name FROM cloud_files("/FileStore/lakehouse/demo/data/customer", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/customer", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_product
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Product table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, input_file_name() as input_file_name FROM cloud_files("/FileStore/lakehouse/demo/data/product", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/product", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_store
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Store table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, input_file_name() as input_file_name FROM cloud_files("/FileStore/lakehouse/demo/data/store", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/store", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_sale
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze sale table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, input_file_name() as input_file_name FROM cloud_files("/FileStore/lakehouse/demo/data/sale", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/sale", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Step 2: Create a Silver table
--- MAGIC 
+-- MAGIC
 -- MAGIC #### For fact table, e.g. Sales, it's straight inserts
 -- MAGIC #### For dimension table, e.g. product, store, user, it's SCD type 2
 
@@ -71,28 +71,28 @@ AS SELECT *, input_file_name() as input_file_name FROM cloud_files("/FileStore/l
 
 -- MAGIC %md
 -- MAGIC ### Referencing Streaming Tables
--- MAGIC 
+-- MAGIC
 -- MAGIC Queries against other DLT tables and views will always use the syntax `live.table_name`. At execution, the target database name will be substituted, allowing for easily migration of pipelines between DEV/QA/PROD environments.
--- MAGIC 
+-- MAGIC
 -- MAGIC When referring to another streaming DLT table within a pipeline, use the `STREAM(live.table_name)` syntax to ensure incremental processing.
 
 -- COMMAND ----------
 
 -- MAGIC %md
 -- MAGIC ### Quality Control with Constraint Clauses
--- MAGIC 
+-- MAGIC
 -- MAGIC Data expectations are expressed as simple constraint clauses, which are essential where statements against a field in a table.
--- MAGIC 
+-- MAGIC
 -- MAGIC Adding a constraint clause will always collect metrics on violations. If no `ON VIOLATION` clause is included, records violating the expectation will still be included.
--- MAGIC 
+-- MAGIC
 -- MAGIC DLT currently supports two options for the `ON VIOLATION` clause.
--- MAGIC 
+-- MAGIC
 -- MAGIC | mode | behavior |
 -- MAGIC | --- | --- |
 -- MAGIC | `FAIL UPDATE` | Fail when expectation is not met |
 -- MAGIC | `DROP ROW` | Only process records that fulfill expectations |
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Roadmap: `QUARANTINE`
 
 -- COMMAND ----------
@@ -154,7 +154,7 @@ FROM STREAM(live.bronze_sale);
 -- COMMAND ----------
 
 -- MAGIC %md 
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Step 3: Create Gold table
 
 -- COMMAND ----------
@@ -244,7 +244,7 @@ COMMENT "sales fact table in the gold layer" AS
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 
+-- MAGIC
 -- MAGIC ### Enrich dataset - create daily sales
 
 -- COMMAND ----------
@@ -274,7 +274,7 @@ COMMENT "daily sales fact table in the gold layer" AS
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC 
+-- MAGIC
 -- MAGIC ### Enrich dataset - create daily store sales
 
 -- COMMAND ----------
