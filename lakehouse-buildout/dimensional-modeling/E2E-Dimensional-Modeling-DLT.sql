@@ -28,35 +28,35 @@
 CREATE STREAMING LIVE TABLE bronze_date
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Date table ingested from cloud object storage landing zone"
-AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/date", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/date", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_customer
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Customer table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/customer", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/customer", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_product
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Product table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/product", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/product", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_store
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze Store table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/store", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/store", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE bronze_sale
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze sale table incrementally ingested from cloud object storage landing zone"
-AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("/Users/leon.eller@databricks.com/sales/data/sale", "csv", map("cloudFiles.inferColumnTypes", "true"));
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/sale", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
