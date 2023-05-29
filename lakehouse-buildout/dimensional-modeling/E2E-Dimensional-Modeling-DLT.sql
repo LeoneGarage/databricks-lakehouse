@@ -25,38 +25,38 @@
 
 -- COMMAND ----------
 
--- CREATE STREAMING LIVE TABLE bronze_date
--- TBLPROPERTIES ("quality" = "bronze")
--- COMMENT "Bronze Date table ingested from cloud object storage landing zone"
--- AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/date", "csv", map("cloudFiles.inferColumnTypes", "true"));
+CREATE STREAMING LIVE TABLE bronze_date
+TBLPROPERTIES ("quality" = "bronze")
+COMMENT "Bronze Date table ingested from cloud object storage landing zone"
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/date", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
--- CREATE STREAMING LIVE TABLE bronze_customer
--- TBLPROPERTIES ("quality" = "bronze")
--- COMMENT "Bronze Customer table incrementally ingested from cloud object storage landing zone"
--- AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/customer", "csv", map("cloudFiles.inferColumnTypes", "true"));
+CREATE STREAMING LIVE TABLE bronze_customer
+TBLPROPERTIES ("quality" = "bronze")
+COMMENT "Bronze Customer table incrementally ingested from cloud object storage landing zone"
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/customer", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
--- CREATE STREAMING LIVE TABLE bronze_product
--- TBLPROPERTIES ("quality" = "bronze")
--- COMMENT "Bronze Product table incrementally ingested from cloud object storage landing zone"
--- AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/product", "csv", map("cloudFiles.inferColumnTypes", "true"));
+CREATE STREAMING LIVE TABLE bronze_product
+TBLPROPERTIES ("quality" = "bronze")
+COMMENT "Bronze Product table incrementally ingested from cloud object storage landing zone"
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/product", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
--- CREATE STREAMING LIVE TABLE bronze_store
--- TBLPROPERTIES ("quality" = "bronze")
--- COMMENT "Bronze Store table incrementally ingested from cloud object storage landing zone"
--- AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/store", "csv", map("cloudFiles.inferColumnTypes", "true"));
+CREATE STREAMING LIVE TABLE bronze_store
+TBLPROPERTIES ("quality" = "bronze")
+COMMENT "Bronze Store table incrementally ingested from cloud object storage landing zone"
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/store", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
--- CREATE STREAMING LIVE TABLE bronze_sale
--- TBLPROPERTIES ("quality" = "bronze")
--- COMMENT "Bronze sale table incrementally ingested from cloud object storage landing zone"
--- AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/sale", "csv", map("cloudFiles.inferColumnTypes", "true"));
+CREATE STREAMING LIVE TABLE bronze_sale
+TBLPROPERTIES ("quality" = "bronze")
+COMMENT "Bronze sale table incrementally ingested from cloud object storage landing zone"
+AS SELECT *, _metadata.file_path as input_file_name FROM cloud_files("${sales-pipeline.raw-location}/sale", "csv", map("cloudFiles.inferColumnTypes", "true"));
 
 -- COMMAND ----------
 
@@ -97,51 +97,51 @@
 
 -- COMMAND ----------
 
-CREATE LIVE TABLE silver_date (
+CREATE STREAMING LIVE TABLE silver_date (
   CONSTRAINT date_id EXPECT (date_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_csv_schema EXPECT (_rescued_data IS NULL) ON VIOLATION DROP ROW
 )
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed silver table, could use a view when required. We ensure valid csv, date_id for demonstration purpose"
 AS SELECT * 
-FROM live.bronze_date;
+FROM STREAM(live.bronze_date);
 
 -- COMMAND ----------
 
-CREATE LIVE TABLE silver_customer (
+CREATE STREAMING LIVE TABLE silver_customer (
   CONSTRAINT customer_id EXPECT (customer_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_csv_schema EXPECT (_rescued_data IS NULL) ON VIOLATION DROP ROW
 )
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed silver table, we ensude valid csv, customer_id for demonstration purpose"
 AS SELECT * 
-FROM live.bronze_customer;
+FROM STREAM(live.bronze_customer);
 
 -- COMMAND ----------
 
-CREATE LIVE TABLE silver_product (
+CREATE STREAMING LIVE TABLE silver_product (
   CONSTRAINT product_id EXPECT (product_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_csv_schema EXPECT (_rescued_data IS NULL) ON VIOLATION DROP ROW
 )
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed silver table, we ensude valid csv, product_id for demonstration purpose"
 AS SELECT * 
-FROM live.bronze_product;
+FROM STREAM(live.bronze_product);
 
 -- COMMAND ----------
 
-CREATE LIVE TABLE silver_store (
+CREATE STREAMING LIVE TABLE silver_store (
   CONSTRAINT valid_business_key EXPECT (business_key IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_csv_schema EXPECT (_rescued_data IS NULL) ON VIOLATION DROP ROW
 )
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed silver table, we ensude valid csv, business_key for demonstration purpose"
 AS SELECT * 
-FROM live.bronze_store;
+FROM STREAM(live.bronze_store);
 
 -- COMMAND ----------
 
-CREATE LIVE TABLE silver_sale (
+CREATE STREAMING LIVE TABLE silver_sale (
   CONSTRAINT transaction_id EXPECT (transaction_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT store EXPECT (store IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_csv_schema EXPECT (_rescued_data IS NULL) ON VIOLATION DROP ROW
@@ -149,7 +149,7 @@ CREATE LIVE TABLE silver_sale (
 TBLPROPERTIES ("quality" = "silver")
 COMMENT "Cleansed silver table, could use a view when required. We ensure valid csv, transaction_id, store for demonstration purpose"
 AS SELECT * 
-FROM live.bronze_sale;
+FROM STREAM(live.bronze_sale);
 
 -- COMMAND ----------
 
@@ -160,11 +160,11 @@ FROM live.bronze_sale;
 -- COMMAND ----------
 
 -- create the gold table
-CREATE LIVE TABLE dim_date
+CREATE STREAMING LIVE TABLE dim_date
 TBLPROPERTIES ("quality" = "gold")
 COMMENT "Static Date dimension in the gold layer"
 AS SELECT * 
-FROM live.silver_date;
+FROM STREAM(live.silver_date);
 
 -- COMMAND ----------
 
@@ -214,7 +214,7 @@ FROM STREAM(live.silver_store)
 -- COMMAND ----------
 
 -- create the fact table for sales in gold layer
-CREATE LIVE TABLE fact_sale (
+CREATE STREAMING LIVE TABLE fact_sale (
   CONSTRAINT valid_store_business_key EXPECT (store_business_key IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT valid_product_id EXPECT (product_id IS NOT NULL) ON VIOLATION DROP ROW
 ) 
@@ -228,7 +228,7 @@ COMMENT "sales fact table in the gold layer" AS
     store.store_id,
     store.business_key as store_business_key,
     sales_amount
-  from live.silver_sale sale
+  from STREAM(live.silver_sale) sale
   inner join live.dim_date date
   on to_date(sale.transaction_date, 'M/d/yy') = to_date(date.date, 'M/d/yyyy') 
   -- only join with the active customers
@@ -250,7 +250,7 @@ COMMENT "sales fact table in the gold layer" AS
 -- COMMAND ----------
 
 -- create the fact table for daily sales in gold layer
-CREATE LIVE TABLE fact_daily_sale (
+CREATE STREAMING LIVE TABLE fact_daily_sale (
   CONSTRAINT valid_date_id EXPECT (date_id IS NOT NULL) ON VIOLATION DROP ROW,
   CONSTRAINT sales_amount EXPECT (sales_amount IS NOT NULL) ON VIOLATION DROP ROW
 ) 
@@ -263,7 +263,7 @@ COMMENT "daily sales fact table in the gold layer" AS
     sale.store_id,
     sale.store_business_key,
     sum(sales_amount) as sales_amount
-  from live.fact_sale sale
+  from STREAM(live.fact_sale) sale
   group by 
     sale.date_id,
     sale.customer_id,
@@ -280,7 +280,7 @@ COMMENT "daily sales fact table in the gold layer" AS
 -- COMMAND ----------
 
 -- create the fact table for daily store sales in gold layer
-CREATE LIVE TABLE fact_daily_store_sale (
+CREATE STREAMING LIVE TABLE fact_daily_store_sale (
   CONSTRAINT valid_date_id EXPECT (date_id IS NOT NULL) ON VIOLATION DROP ROW
 ) 
 TBLPROPERTIES ("quality" = "gold")
@@ -290,7 +290,7 @@ COMMENT "daily sales fact table in the gold layer" AS
     sale.store_id,
     sale.store_business_key,
     sum(sales_amount) as sales_amount
-  from live.fact_sale sale
+  from STREAM(live.fact_sale) sale
   group by 
     sale.date_id,
     sale.store_id,
